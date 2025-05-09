@@ -1,6 +1,8 @@
 import numpy as np
 import cv2  # Pour le traitement d'image
 import matplotlib.pyplot as plt  # Pour la visualisation    
+from segmentation import segment_image_morphology
+from features import extract_texture_features
 
 def create_segmentation_map(image, model, class_names):
     """
@@ -73,47 +75,5 @@ def create_segmentation_map(image, model, class_names):
     # Créer une version blended (superposition semi-transparente)
     alpha = 0.7
     blended = cv2.addWeighted(image_color, 1 - alpha, segmented.astype(np.uint8), alpha, 0)
-    
-    # Afficher les résultats
-    fig, axes = plt.subplots(1, 3, figsize=(18, 6))
-    
-    axes[0].imshow(image_color)
-    axes[0].set_title('Image originale')
-    axes[0].axis('off')
-    
-    axes[1].imshow(segmented)
-    axes[1].set_title('Classification des segments')
-    axes[1].axis('off')
-    
-    axes[2].imshow(blended)
-    axes[2].set_title('Superposition')
-    axes[2].axis('off')
-    
-    # Ajouter une légende
-    patches = []
-    for class_name in class_names:
-        if class_name in colors:
-            color_rgb = np.array(colors[class_name]) / 255.0
-            patch = plt.Rectangle((0, 0), 1, 1, fc=color_rgb)
-            patches.append(patch)
-    
-    fig.legend(patches, class_names, loc='lower center', ncol=len(class_names), bbox_to_anchor=(0.5, -0.05))
-    
-    plt.tight_layout()
-    plt.show()
-    
-    # Analyser la distribution des types de terrain
-    class_counts = {}
-    for class_name in segment_classes.values():
-        if class_name in class_counts:
-            class_counts[class_name] += 1
-        else:
-            class_counts[class_name] = 1
-    
-    # Afficher la distribution sous forme de diagramme circulaire
-    plt.figure(figsize=(8, 8))
-    plt.pie(list(class_counts.values()), labels=list(class_counts.keys()), autopct='%1.1f%%')
-    plt.title('Distribution des types de terrain')
-    plt.show()
     
     return segmented, segment_classes, blended

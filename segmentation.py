@@ -2,6 +2,9 @@ import numpy as np
 import cv2  # Pour le traitement d'image
 import matplotlib.pyplot as plt  # Pour la visualisation    
 
+# Importer la fonction depuis morphology.py
+from morphology import apply_morphological_operation
+
 def segment_image_morphology(image, method='watershed'):
     """
     Segmente l'image en utilisant des techniques morphologiques

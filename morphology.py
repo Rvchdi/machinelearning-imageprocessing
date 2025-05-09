@@ -1,75 +1,7 @@
 import cv2  # For image processing
 import numpy as np  # For numerical operations
 import os  # For file operations
-def segment_image_morphology(image, method='watershed'):
-    """
-    Segmente l'image en utilisant des techniques morphologiques
-    
-    Args:
-        image: Image d'entrée
-        method: Méthode de segmentation ('watershed', 'region_growing')
-    
-    Returns:
-        Image segmentée et labels des segments
-    """
-    # Conversion en niveaux de gris si nécessaire
-    if len(image.shape) > 2:
-        gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-    else:
-        gray = image.copy()
-    
-    # Appliquer un flou gaussien pour réduire le bruit
-    blurred = cv2.GaussianBlur(gray, (5, 5), 0)
-    
-    if method.lower() == 'watershed':
-        # Segmentation watershed
-        # Calcul du gradient pour trouver les bordures
-        gradient = apply_morphological_operation(blurred, 'gradient', 3)
-        
-        # Binarisation du gradient
-        _, binary = cv2.threshold(gradient, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-        
-        # Transformation de distance
-        dist = cv2.distanceTransform(binary, cv2.DIST_L2, 3)
-        
-        # Binarisation de la transformation de distance
-        _, dist_bin = cv2.threshold(dist, 0.5*dist.max(), 255, cv2.THRESH_BINARY)
-        dist_bin = dist_bin.astype(np.uint8)
-        
-        # Recherche des marqueurs (noyaux des régions)
-        contours, _ = cv2.findContours(dist_bin, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        markers = np.zeros_like(gray)
-        for i, contour in enumerate(contours):
-            cv2.drawContours(markers, [contour], -1, i+1, -1)
-        
-        # Appliquer watershed
-        if len(image.shape) == 2:
-            image_color = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
-        else:
-            image_color = image.copy()
-        
-        markers_copy = markers.copy()
-        cv2.watershed(image_color, markers_copy)
-        
-        return markers_copy, len(contours)
-    
-    elif method.lower() == 'region_growing':
-        # Implémentation simplifiée de croissance de région
-        _, binary = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-        
-        # Trouver les composantes connectées
-        num_labels, labels = cv2.connectedComponents(binary)
-        
-        return labels, num_labels - 1
-    
-    else:
-        # Méthode par défaut: simple seuillage adaptatif
-        binary = cv2.adaptiveThreshold(blurred, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-                                       cv2.THRESH_BINARY, 11, 2)
-        
-        num_labels, labels = cv2.connectedComponents(binary)
-        
-        return labels, num_labels - 1
+
 def apply_morphological_operation(image, operation, kernel_size):
     """
     Applique une opération morphologique à l'image

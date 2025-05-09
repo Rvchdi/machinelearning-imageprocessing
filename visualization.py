@@ -5,6 +5,10 @@ import matplotlib.pyplot as plt  # For visualization
 from skimage import io  # For image reading
 import cv2  # For image processing
 
+# Importer les fonctions nécessaires
+from morphology import apply_morphological_operation, calculate_gradient_morphology
+from segmentation import segment_image_morphology
+
 def visualize_sample_images(data_dir, n_samples=5):
     """
     Visualise quelques exemples d'images pour chaque classe
@@ -136,6 +140,7 @@ def visualize_gradient_types(image, kernel_size=3):
     
     plt.tight_layout()
     plt.show()
+
 def compare_segmentation_methods(image):
     """
     Compare différentes méthodes de segmentation
@@ -165,4 +170,4 @@ def compare_segmentation_methods(image):
         axes[i + 1].axis('off')
     
     plt.tight_layout()
-    plt.show()
+    return fig
