@@ -19,7 +19,7 @@ from morphology import (
 )
 from segmentation import segment_image_morphology
 from features import extract_texture_features
-from classification import create_segmentation_map
+from classification import create_segmentation_map, classify_pixels_directly
 from visualization import (
     visualize_morphological_operations, 
     visualize_gradient_types, 
@@ -343,11 +343,21 @@ def main():
         if model is None:
             st.warning("Aucun modèle de classification n'a été chargé. Veuillez d'abord entrainer un modèle.")
         else:
+            classification_method = st.radio(
+                "Méthode de classification",
+                ["Classification par segments", "Classification directe par pixels"]
+            )
+            
             if st.button("Classifier l'image"):
                 with st.spinner("Classification en cours..."):
                     try:
-                        # Effectuer la segmentation et la classification
-                        segmented, segment_classes, blended = create_segmentation_map(image, model, class_names)
+                        if classification_method == "Classification par segments":
+                            # Méthode originale
+                            segmented, segment_classes, blended = create_segmentation_map(image, model, class_names)
+                        else:
+                            # Nouvelle méthode plus simple
+                            grid_size = st.slider("Taille de la grille (pixels)", 8, 32, 16)
+                            segmented, segment_classes, blended = classify_pixels_directly(image, model, class_names, grid_size)
                         
                         st.subheader("Résultats de classification")
                         
@@ -369,34 +379,38 @@ def main():
                             else:
                                 class_counts[class_name] = 1
                         
-                        # Créer un graphique circulaire
-                        fig, ax = plt.subplots(figsize=(8, 8))
-                        ax.pie(
-                            list(class_counts.values()), 
-                            labels=list(class_counts.keys()), 
-                            autopct='%1.1f%%',
-                            colors=plt.cm.tab10.colors[:len(class_counts)]
-                        )
-                        ax.set_title('Distribution des types de terrain')
-                        st.pyplot(fig)
-                        
-                        # Afficher les statistiques sous forme de tableau
-                        st.subheader("Statistiques des classes identifiées")
-                        
-                        # Créer un DataFrame pour les statistiques
-                        stats_data = []
-                        total_segments = sum(class_counts.values())
-                        
-                        for class_name, count in class_counts.items():
-                            percentage = count / total_segments * 100
-                            stats_data.append({
-                                "Classe": class_name,
-                                "Nombre de segments": count,
-                                "Pourcentage": f"{percentage:.1f}%"
-                            })
-                        
-                        stats_df = pd.DataFrame(stats_data)
-                        st.table(stats_df)
+                        # Vérifier si des classes ont été identifiées
+                        if len(class_counts) > 0 and not ('placeholder' in class_counts and len(class_counts) == 1):
+                            # Créer un graphique circulaire
+                            fig, ax = plt.subplots(figsize=(8, 8))
+                            ax.pie(
+                                list(class_counts.values()), 
+                                labels=list(class_counts.keys()), 
+                                autopct='%1.1f%%',
+                                colors=plt.cm.tab10.colors[:len(class_counts)]
+                            )
+                            ax.set_title('Distribution des types de terrain')
+                            st.pyplot(fig)
+                            
+                            # Afficher les statistiques sous forme de tableau
+                            st.subheader("Statistiques des classes identifiées")
+                            
+                            # Créer un DataFrame pour les statistiques
+                            stats_data = []
+                            total_segments = sum(class_counts.values())
+                            
+                            for class_name, count in class_counts.items():
+                                percentage = count / total_segments * 100
+                                stats_data.append({
+                                    "Classe": class_name,
+                                    "Nombre de segments": count,
+                                    "Pourcentage": f"{percentage:.1f}%"
+                                })
+                            
+                            stats_df = pd.DataFrame(stats_data)
+                            st.table(stats_df)
+                        else:
+                            st.warning("Aucune classe n'a été identifiée. Essayez d'ajuster les paramètres ou d'utiliser une autre méthode de classification.")
                     
                     except Exception as e:
                         st.error(f"Erreur lors de la classification: {e}")
